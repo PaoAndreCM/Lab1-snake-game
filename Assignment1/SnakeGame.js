@@ -1,4 +1,4 @@
-// "use strict";
+"use strict";
 
 import * as THREE from "three";
 import { TrackballControls } from "three/addons/controls/TrackballControls.js";
@@ -47,28 +47,31 @@ gridHelper.rotation.x = - Math.PI / 2;
 field.add( gridHelper );
 
 // Snake head
-const cube = new THREE.Object3D; // invisible plane to center the cube
+const sneakHead = new THREE.Object3D; // invisible plane to center the cube
 const Z_OFFSET = 0.001
 const step = 1;
-cube.position.copy(getRandomPosition()); 
-
-function getRandomPosition() {
-  const MAX = 4;
-  const MIN = -6;
-  const x = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
-  const y = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
-  const z = cube.position.z = step / 2 + Z_OFFSET;
-  return new THREE.Vector3( x, y, z );
-}
-field.add( cube );
+sneakHead.position.copy(getRandomPosition()); 
+field.add( sneakHead );
 
 const sneakCubeLength = 0.95;
 const cubeGeometry = new THREE.BoxGeometry( sneakCubeLength, sneakCubeLength, sneakCubeLength ); 
-const cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x59af3f,
-                                                    metalness:0.5,
-                                                    roughness:0.1 } ); 
+let cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x59af3f,
+                                                       metalness:0.5,
+                                                       roughness:0.1 } ); 
 const snakeCube = new THREE.Mesh( cubeGeometry, cubeMaterial ); 
-cube.add( snakeCube );
+sneakHead.add( snakeCube );
+
+// Snake body
+const bodyCube = new THREE.Object3D; // invisible plane to center the cube
+let bodyMaterial = new THREE.MeshStandardMaterial( { color: 'blue',
+                                                       metalness:0.5,
+                                                       roughness:0.1 } ); 
+const snakeBodyCube = new THREE.Mesh( cubeGeometry, bodyMaterial ); 
+bodyCube.add( snakeBodyCube );
+
+let snakeBody = new Array();
+// snakeBody.insertFront(cube);
+
 
 // Food ball
 const foodRadius = 0.5;
@@ -80,15 +83,25 @@ const food = new THREE.Mesh( foodGeometry, foodMaterial );
 food.position.copy(getRandomPosition())
 field.add( food );
 
+function getRandomPosition() {
+  const MAX = 4;
+  const MIN = -6;
+  const x = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
+  const y = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
+  const z = sneakHead.position.z = step / 2 + Z_OFFSET;
+  return new THREE.Vector3( x, y, z );
+}
+
 let nIntervId;
 function move(){
   if (!nIntervId) {
-    cube.position.add(speed.clone())
+    sneakHead.position.add(speed.clone())
   }
 }
 
 const speed = new THREE.Vector3(0,0,0); // defining constant for speed
 function moveSnake(event){
+  // console.log(event.key);
   if ( event.key == "ArrowLeft" && speed.x != 1 ){
       speed.y=0;
       speed.x=-1;
@@ -105,28 +118,32 @@ function moveSnake(event){
       speed.y=-1;
       speed.x=0;
   }
+  if ( event.key == " "){
+      speed.y=0;
+      speed.x=0;
+}
 }
 document.addEventListener("keydown", moveSnake);
 setInterval(move, 250);
 
 function snakeHitsWall(){
-  if (cube.position.x > 5) {
+  if (sneakHead.position.x > 5) {
     return true;
   }
-  if(cube.position.x < -5){
+  if(sneakHead.position.x < -5){
     return true;
   }
-  if(cube.position.y > 5){
+  if(sneakHead.position.y > 5){
     return true;
   }
-  if(cube.position.y < -5){
+  if(sneakHead.position.y < -5){
     return true;
   }
   return false;
 }
 
 function snakeEatsFood(){
-  return cube.position.equals(food.position);
+  return sneakHead.position.equals(food.position);
 }
 
 // * Render loop
@@ -135,14 +152,34 @@ function render() {
   requestAnimationFrame(render);
   
   if( snakeHitsWall() ){
-    field.remove(cube);
-    cube.position.set(0,0,0);
+    field.remove(sneakHead);
+    sneakHead.position.set(0,0,0);
     if(!alert('Game Over.')){      
-      window.location.reload(true);}
+      window.location.reload(true);
+    }
   }
 
   if( snakeEatsFood() ){
-    food.position.copy(getRandomPosition())
+    const newBodyBlock = food.position.clone(); // clones coordinates of food
+    const cube2 = bodyCube.clone();
+    field.add(cube2);
+    cube2.position.copy(newBodyBlock)
+    snakeBody.push(newBodyBlock); // stores coordinates of food into the array
+    food.position.copy(getRandomPosition()); // gives the food a new position
+  }
+
+  snakeBody.forEach(element => {
+    const cube2 = bodyCube.clone();
+    field.add(cube2);
+    cube2.position.copy(element);
+  });
+
+  for (let i = snakeBody.length-1; i > 0; i--){
+    snakeBody[i] = snakeBody [i-1];
+    console.log(snakeBody);
+  }
+  if (snakeBody.length){
+    snakeBody[0] = sneakHead.position;
   }
 
   renderer.render(scene, camera);
