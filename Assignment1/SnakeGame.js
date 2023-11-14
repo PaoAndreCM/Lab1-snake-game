@@ -22,11 +22,6 @@ const light = new THREE.PointLight();
 light.position.set(5,0,5);
 scene.add(light);
 
-function createCube(length){
-
-  // TODO: DO I need this?
-}
-
 // Playing Field
 const field = new THREE.Object3D;
 scene.add( field );
@@ -55,11 +50,13 @@ field.add( gridHelper );
 const cube = new THREE.Object3D; // invisible plane to center the cube
 const Z_OFFSET = 0.001
 const step = 1;
-cube.position.copy(getRandomPosition(4, -6)); // TODO: Remove magic values
+cube.position.copy(getRandomPosition()); 
 
-function getRandomPosition( max, min ) {
-  const x = Math.ceil(Math.random() * ( max - min ) + min) + step / 2;
-  const y = Math.ceil(Math.random() * ( max - min ) + min) + step / 2;
+function getRandomPosition() {
+  const MAX = 4;
+  const MIN = -6;
+  const x = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
+  const y = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
   const z = cube.position.z = step / 2 + Z_OFFSET;
   return new THREE.Vector3( x, y, z );
 }
@@ -80,7 +77,7 @@ const foodMaterial = new THREE.MeshStandardMaterial( { color: 0xbf2237,
                                                     metalness:0.5,
                                                     roughness:0.1 } ); 
 const food = new THREE.Mesh( foodGeometry, foodMaterial ); 
-food.position.copy(getRandomPosition(4,-6))
+food.position.copy(getRandomPosition())
 field.add( food );
 
 let nIntervId;
@@ -92,19 +89,19 @@ function move(){
 
 const speed = new THREE.Vector3(0,0,0); // defining constant for speed
 function moveSnake(event){
-  if (event.key == "ArrowLeft"){
+  if ( event.key == "ArrowLeft" && speed.x != 1 ){
       speed.y=0;
       speed.x=-1;
   }
-  if (event.key == "ArrowRight"){
+  if ( event.key == "ArrowRight" && speed.x != -1 ){
       speed.y=0;
       speed.x=1;
   }
-  if (event.key == "ArrowUp"){
+  if ( event.key == "ArrowUp" && speed.y != -1 ){
       speed.x=0;
       speed.y=1;
   }
-  if (event.key == "ArrowDown"){
+  if ( event.key == "ArrowDown" && speed.y != 1){
       speed.y=-1;
       speed.x=0;
   }
@@ -138,12 +135,14 @@ function render() {
   requestAnimationFrame(render);
   
   if( snakeHitsWall() ){
-    if(!alert('Game Over.')){window.location.reload(true);}
-    speed = Vector3.set(0,0,0);
+    field.remove(cube);
+    cube.position.set(0,0,0);
+    if(!alert('Game Over.')){      
+      window.location.reload(true);}
   }
 
   if( snakeEatsFood() ){
-    food.position.copy(getRandomPosition(4,-6))
+    food.position.copy(getRandomPosition())
   }
 
   renderer.render(scene, camera);
