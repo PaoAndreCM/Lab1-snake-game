@@ -69,7 +69,9 @@ let bodyMaterial = new THREE.MeshStandardMaterial( { color: 'blue',
 const snakeBodyCube = new THREE.Mesh( cubeGeometry, bodyMaterial ); 
 bodyCube.add( snakeBodyCube );
 
-let snakeBody = new Array();
+
+let snakeBody = new Deque();
+window.snakeBody = snakeBody;
 // snakeBody.insertFront(cube);
 
 
@@ -94,33 +96,43 @@ function getRandomPosition() {
 
 let nIntervId;
 function move(){
-  if (!nIntervId) {
-    sneakHead.position.add(speed.clone())
+  if (!nIntervId) { 
+    let oldHeadPosition = new THREE.Object3D;
+    if(!direction.equals(0,0,0)){
+      oldHeadPosition = sneakHead.position.clone();
+    }
+    sneakHead.position.add(direction.clone());
+    if (!snakeBody.isEmpty()){
+      const lastBodySegment = snakeBody.removeBack(); // Remove the last segment
+      lastBodySegment.position.copy(oldHeadPosition);
+      snakeBody.insertFront(lastBodySegment); // Move it to the front
+    }
   }
 }
 
-const speed = new THREE.Vector3(0,0,0); // defining constant for speed
+
+const direction = new THREE.Vector3(0,0,0); // defining constant for speed
 function moveSnake(event){
   // console.log(event.key);
-  if ( event.key == "ArrowLeft" && speed.x != 1 ){
-      speed.y=0;
-      speed.x=-1;
+  if ( event.key == "ArrowLeft" && direction.x != 1 ){
+      direction.y=0;
+      direction.x=-1;
   }
-  if ( event.key == "ArrowRight" && speed.x != -1 ){
-      speed.y=0;
-      speed.x=1;
+  if ( event.key == "ArrowRight" && direction.x != -1 ){
+      direction.y=0;
+      direction.x=1;
   }
-  if ( event.key == "ArrowUp" && speed.y != -1 ){
-      speed.x=0;
-      speed.y=1;
+  if ( event.key == "ArrowUp" && direction.y != -1 ){
+      direction.x=0;
+      direction.y=1;
   }
-  if ( event.key == "ArrowDown" && speed.y != 1){
-      speed.y=-1;
-      speed.x=0;
+  if ( event.key == "ArrowDown" && direction.y != 1){
+      direction.y=-1;
+      direction.x=0;
   }
   if ( event.key == " "){
-      speed.y=0;
-      speed.x=0;
+      direction.y=0;
+      direction.x=0;
 }
 }
 document.addEventListener("keydown", moveSnake);
@@ -146,6 +158,10 @@ function snakeEatsFood(){
   return sneakHead.position.equals(food.position);
 }
 
+function getSnakeLength(){
+  return snakeBody.size() + 1;
+}
+
 // * Render loop
 const controls = new TrackballControls(camera, renderer.domElement);
 function render() {
@@ -154,7 +170,7 @@ function render() {
   if( snakeHitsWall() ){
     field.remove(sneakHead);
     sneakHead.position.set(0,0,0);
-    if(!alert('Game Over.')){      
+    if(!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')){      
       window.location.reload(true);
     }
   }
@@ -162,24 +178,10 @@ function render() {
   if( snakeEatsFood() ){
     const newBodyBlock = food.position.clone(); // clones coordinates of food
     const cube2 = bodyCube.clone();
+    cube2.position.copy(newBodyBlock);
     field.add(cube2);
-    cube2.position.copy(newBodyBlock)
-    snakeBody.push(newBodyBlock); // stores coordinates of food into the array
+    snakeBody.insertBack(cube2); // adds new cube to the snake body
     food.position.copy(getRandomPosition()); // gives the food a new position
-  }
-
-  snakeBody.forEach(element => {
-    const cube2 = bodyCube.clone();
-    field.add(cube2);
-    cube2.position.copy(element);
-  });
-
-  for (let i = snakeBody.length-1; i > 0; i--){
-    snakeBody[i] = snakeBody [i-1];
-    console.log(snakeBody);
-  }
-  if (snakeBody.length){
-    snakeBody[0] = sneakHead.position;
   }
 
   renderer.render(scene, camera);
