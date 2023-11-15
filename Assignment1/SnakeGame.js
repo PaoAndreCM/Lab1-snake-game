@@ -94,6 +94,24 @@ function getRandomPosition() {
   return new THREE.Vector3( x, y, z );
 }
 
+function getFoodPosition() {
+  let foodPosition = new THREE.Vector3;
+  do {
+    foodPosition = getRandomPosition();
+  } while ( foodPositionColidesWithSnake(foodPosition) );
+  return foodPosition;
+}
+
+function foodPositionColidesWithSnake(foodPosition) {
+  for (const element of snakeBody.getValues()) {
+    if (element.position.equals(foodPosition)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+
 let nIntervId;
 function move(){
   if (!nIntervId) { 
@@ -139,16 +157,16 @@ document.addEventListener("keydown", moveSnake);
 setInterval(move, 250);
 
 function snakeHitsWall(){
-  if (sneakHead.position.x > 5) {
+  if (sneakHead.position.x > fieldSize/2) {
     return true;
   }
-  if(sneakHead.position.x < -5){
+  if(sneakHead.position.x < -fieldSize/2){
     return true;
   }
-  if(sneakHead.position.y > 5){
+  if(sneakHead.position.y > fieldSize/2){
     return true;
   }
-  if(sneakHead.position.y < -5){
+  if(sneakHead.position.y < -fieldSize/2){
     return true;
   }
   return false;
@@ -181,7 +199,7 @@ function render() {
     cube2.position.copy(newBodyBlock);
     field.add(cube2);
     snakeBody.insertBack(cube2); // adds new cube to the snake body
-    food.position.copy(getRandomPosition()); // gives the food a new position
+    food.position.copy(getFoodPosition()); // gives the food a new position
   }
 
   renderer.render(scene, camera);
