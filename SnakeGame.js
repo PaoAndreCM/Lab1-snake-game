@@ -82,6 +82,8 @@ const snakeHeadCube = new THREE.Mesh( cubeGeometry, cubeMaterial );
 sneakHead.add( snakeHeadCube );
 
 // Snake body
+const snake = new THREE.Object3D;
+field.add(snake)
 const bodySegment = new THREE.Object3D; // invisible plane to center the cube
 let bodyMaterial = new THREE.MeshStandardMaterial( { color: 'blue',
                                                        metalness:0.5,
@@ -117,7 +119,7 @@ function getRandomPosition() {
   const MIN = -6;
   const x = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
   const y = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
-  const z = sneakHead.position.z = step / 2 + Z_OFFSET;
+  const z = step / 2 + Z_OFFSET;
   return new THREE.Vector3( x, y, z );
 }
 
@@ -137,7 +139,8 @@ function collidesWithSnakeBody(objectPosition){
 }
 
 let nIntervId;
-setInterval(move, 250);
+const TIMEFRAME = 150;
+setInterval(move, TIMEFRAME);
 
 function move(){
   if (!nIntervId) { 
@@ -158,8 +161,10 @@ function move(){
 function checkIfGameOver(){
   if (snakeHitsWall() || collidesWithSnakeBody(sneakHead.position)) {
     gameOverSound.play();
+    const zz = step / 2 + Z_OFFSET
+    sneakHead.position.set(0, 0, -zz);
     field.remove(sneakHead);
-    sneakHead.position.set(0, 0, 0);
+    field.remove(snake);
     if (!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')) {
       window.location.reload(true);
     }
@@ -222,7 +227,7 @@ function render() {
     const newBodyBlock = food.position.clone(); // clones coordinates of food
     const cube2 = bodySegment.clone();
     cube2.position.copy(newBodyBlock);
-    field.add(cube2);
+    snake.add(cube2);
     snakeBody.insertBack(cube2); // adds new cube to the snake body
     food.position.copy(getFoodPosition()); // gives the food a new position
   }
