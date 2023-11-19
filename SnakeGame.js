@@ -203,10 +203,6 @@ function moveSnake(event){
       direction.y=-1;
       direction.x=0;
   }
-  if ( event.key == " "){
-      direction.y=0;
-      direction.x=0;
-}
 }
 
 function snakeEatsFood() {
