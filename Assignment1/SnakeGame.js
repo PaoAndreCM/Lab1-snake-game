@@ -14,7 +14,7 @@ const camera = new THREE.PerspectiveCamera(30, canvas.width / canvas.height, 0.1
 camera.position.set(0, -12, 15);
 camera.lookAt(scene.position);
 scene.add(camera);
-scene.add(new THREE.AxesHelper(1.5));
+// scene.add(new THREE.AxesHelper(1.5));
 
 // Add light sources
 scene.add(new THREE.AmbientLight('#ffffff'));
