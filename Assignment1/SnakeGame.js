@@ -58,16 +58,16 @@ const cubeGeometry = new THREE.BoxGeometry( sneakCubeLength, sneakCubeLength, sn
 let cubeMaterial = new THREE.MeshStandardMaterial( { color: 0x59af3f,
                                                        metalness:0.5,
                                                        roughness:0.1 } ); 
-const snakeCube = new THREE.Mesh( cubeGeometry, cubeMaterial ); 
-sneakHead.add( snakeCube );
+const snakeHeadCube = new THREE.Mesh( cubeGeometry, cubeMaterial ); 
+sneakHead.add( snakeHeadCube );
 
 // Snake body
-const bodyCube = new THREE.Object3D; // invisible plane to center the cube
+const bodySegment = new THREE.Object3D; // invisible plane to center the cube
 let bodyMaterial = new THREE.MeshStandardMaterial( { color: 'blue',
                                                        metalness:0.5,
                                                        roughness:0.1 } ); 
 const snakeBodyCube = new THREE.Mesh( cubeGeometry, bodyMaterial ); 
-bodyCube.add( snakeBodyCube );
+bodySegment.add( snakeBodyCube );
 
 
 let snakeBody = new Deque();
@@ -82,7 +82,7 @@ const foodMaterial = new THREE.MeshStandardMaterial( { color: 0xbf2237,
                                                     metalness:0.5,
                                                     roughness:0.1 } ); 
 const food = new THREE.Mesh( foodGeometry, foodMaterial ); 
-food.position.copy(getRandomPosition())
+food.position.copy(getFoodPosition())
 field.add( food );
 
 function getRandomPosition() {
@@ -98,23 +98,30 @@ function getFoodPosition() {
   let foodPosition = new THREE.Vector3;
   do {
     foodPosition = getRandomPosition();
-  } while ( foodPositionColidesWithSnake(foodPosition) );
+  } while ( collidesWithSnake(foodPosition) );
   return foodPosition;
 }
 
-function foodPositionColidesWithSnake(foodPosition) {
-  for (const element of snakeBody.getValues()) {
-    if (element.position.equals(foodPosition)) {
-      return true;
-    }
+function collidesWithSnake(objectPosition) {
+  if (sneakHead.position.equals(objectPosition)){
+    return true;
   }
-  return false;
+  return collidesWithSnakeBody(objectPosition);
 }
 
+function collidesWithSnakeBody(objectPosition){
+    for (const element of snakeBody.getValues()) {
+      if (element.position.equals(objectPosition)) {
+        return true;
+      }
+  }
+}
 
 let nIntervId;
 function move(){
   if (!nIntervId) { 
+    // console.log(collidesWithSnakeBody(sneakHead));
+    // console.log( true );
     let oldHeadPosition = new THREE.Object3D;
     if(!direction.equals(0,0,0)){
       oldHeadPosition = sneakHead.position.clone();
@@ -124,6 +131,13 @@ function move(){
       const lastBodySegment = snakeBody.removeBack(); // Remove the last segment
       lastBodySegment.position.copy(oldHeadPosition);
       snakeBody.insertFront(lastBodySegment); // Move it to the front
+    }
+    if (collidesWithSnakeBody(sneakHead.position)) {
+      field.remove(sneakHead);
+      sneakHead.position.set(0, 0, 0);
+      if (!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')) {
+        window.location.reload(true);
+      }
     }
   }
 }
@@ -156,27 +170,23 @@ function moveSnake(event){
 document.addEventListener("keydown", moveSnake);
 setInterval(move, 250);
 
-function snakeHitsWall(){
-  if (sneakHead.position.x > fieldSize/2) {
-    return true;
-  }
-  if(sneakHead.position.x < -fieldSize/2){
-    return true;
-  }
-  if(sneakHead.position.y > fieldSize/2){
-    return true;
-  }
-  if(sneakHead.position.y < -fieldSize/2){
-    return true;
-  }
-  return false;
+function snakeHitsWall() {
+  const halfFieldSize = fieldSize / 2;
+
+  return (
+    sneakHead.position.x > halfFieldSize ||
+    sneakHead.position.x < -halfFieldSize ||
+    sneakHead.position.y > halfFieldSize ||
+    sneakHead.position.y < -halfFieldSize
+  );
 }
 
-function snakeEatsFood(){
+
+function snakeEatsFood() {
   return sneakHead.position.equals(food.position);
 }
 
-function getSnakeLength(){
+function getSnakeLength() {
   return snakeBody.size() + 1;
 }
 
@@ -184,8 +194,7 @@ function getSnakeLength(){
 const controls = new TrackballControls(camera, renderer.domElement);
 function render() {
   requestAnimationFrame(render);
-  
-  if( snakeHitsWall() ){
+  if( snakeHitsWall()){
     field.remove(sneakHead);
     sneakHead.position.set(0,0,0);
     if(!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')){      
@@ -193,9 +202,17 @@ function render() {
     }
   }
 
+  // if( collidesWithSnakeBody(sneakHead.position)){
+  //   // field.remove(sneakHead);
+  //   // sneakHead.position.set(0,0,0);
+  //   if(!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')){      
+  //     window.location.reload(true);
+  //   }
+  // }
+
   if( snakeEatsFood() ){
     const newBodyBlock = food.position.clone(); // clones coordinates of food
-    const cube2 = bodyCube.clone();
+    const cube2 = bodySegment.clone();
     cube2.position.copy(newBodyBlock);
     field.add(cube2);
     snakeBody.insertBack(cube2); // adds new cube to the snake body
