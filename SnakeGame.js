@@ -104,6 +104,14 @@ const food = new THREE.Mesh( foodGeometry, foodMaterial );
 food.position.copy(getFoodPosition())
 field.add( food );
 
+function getFoodPosition() {
+  let foodPosition = new THREE.Vector3;
+  do {
+    foodPosition = getRandomPosition();
+  } while ( collidesWithSnake(foodPosition) );
+  return foodPosition;
+}
+
 function getRandomPosition() {
   const MAX = 4;
   const MIN = -6;
@@ -111,14 +119,6 @@ function getRandomPosition() {
   const y = Math.ceil(Math.random() * ( MAX - MIN ) + MIN) + step / 2;
   const z = sneakHead.position.z = step / 2 + Z_OFFSET;
   return new THREE.Vector3( x, y, z );
-}
-
-function getFoodPosition() {
-  let foodPosition = new THREE.Vector3;
-  do {
-    foodPosition = getRandomPosition();
-  } while ( collidesWithSnake(foodPosition) );
-  return foodPosition;
 }
 
 function collidesWithSnake(objectPosition) {
@@ -137,6 +137,8 @@ function collidesWithSnakeBody(objectPosition){
 }
 
 let nIntervId;
+setInterval(move, 250);
+
 function move(){
   if (!nIntervId) { 
     let oldHeadPosition = new THREE.Object3D;
@@ -149,7 +151,7 @@ function move(){
       lastBodySegment.position.copy(oldHeadPosition);
       snakeBody.insertFront(lastBodySegment); // Move it to the front
     }
-    checkIfGameOver()
+    checkIfGameOver();
   }
 }
 
@@ -164,7 +166,21 @@ function checkIfGameOver(){
   }
 }
 
-const direction = new THREE.Vector3(0,0,0); // defining constant for speed
+function snakeHitsWall() {
+  const halfFieldSize = fieldSize / 2;
+
+  return (
+    sneakHead.position.x > halfFieldSize ||
+    sneakHead.position.x < -halfFieldSize ||
+    sneakHead.position.y > halfFieldSize ||
+    sneakHead.position.y < -halfFieldSize
+  );
+}
+
+const direction = new THREE.Vector3(0,0,0);
+
+document.addEventListener("keydown", moveSnake);
+
 function moveSnake(event){
   if ( event.key == "ArrowLeft" && direction.x != 1 ){
       direction.y=0;
@@ -187,20 +203,6 @@ function moveSnake(event){
       direction.x=0;
 }
 }
-document.addEventListener("keydown", moveSnake);
-setInterval(move, 250);
-
-function snakeHitsWall() {
-  const halfFieldSize = fieldSize / 2;
-
-  return (
-    sneakHead.position.x > halfFieldSize ||
-    sneakHead.position.x < -halfFieldSize ||
-    sneakHead.position.y > halfFieldSize ||
-    sneakHead.position.y < -halfFieldSize
-  );
-}
-
 
 function snakeEatsFood() {
   return sneakHead.position.equals(food.position);
