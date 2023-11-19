@@ -139,7 +139,7 @@ function collidesWithSnakeBody(objectPosition){
 }
 
 let nIntervId;
-const TIMEFRAME = 150;
+const TIMEFRAME = 250;
 setInterval(move, TIMEFRAME);
 
 function move(){
