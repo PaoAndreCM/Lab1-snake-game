@@ -18,9 +18,29 @@ scene.add(new THREE.AxesHelper(1.5));
 
 // Add light sources
 scene.add(new THREE.AmbientLight('#ffffff'));
-const light = new THREE.PointLight();
-light.position.set(5,0,5);
+const light = new THREE.DirectionalLight();
+light.position.set(0,0,1);
 scene.add(light);
+
+// create an AudioListener and add it to the camera
+const listener = new THREE.AudioListener();
+camera.add( listener );
+
+// create global audio sources
+const gameOverSound = new THREE.Audio( listener );
+const foodSound = new THREE.Audio(listener);
+
+// load a sound and set it as the Audio object's buffer
+const audioLoader = new THREE.AudioLoader();
+audioLoader.load( 'sound1.wav', function( buffer ) {
+	gameOverSound.setBuffer( buffer );
+	gameOverSound.setVolume( 0.5 );
+});
+
+audioLoader.load( 'sound2.wav', function( buffer ) {
+	foodSound.setBuffer( buffer );
+	foodSound.setVolume( 0.5 );
+});
 
 // Playing Field
 const field = new THREE.Object3D;
@@ -72,7 +92,6 @@ bodySegment.add( snakeBodyCube );
 
 let snakeBody = new Deque();
 window.snakeBody = snakeBody;
-// snakeBody.insertFront(cube);
 
 
 // Food ball
@@ -120,8 +139,6 @@ function collidesWithSnakeBody(objectPosition){
 let nIntervId;
 function move(){
   if (!nIntervId) { 
-    // console.log(collidesWithSnakeBody(sneakHead));
-    // console.log( true );
     let oldHeadPosition = new THREE.Object3D;
     if(!direction.equals(0,0,0)){
       oldHeadPosition = sneakHead.position.clone();
@@ -132,20 +149,23 @@ function move(){
       lastBodySegment.position.copy(oldHeadPosition);
       snakeBody.insertFront(lastBodySegment); // Move it to the front
     }
-    if (collidesWithSnakeBody(sneakHead.position)) {
-      field.remove(sneakHead);
-      sneakHead.position.set(0, 0, 0);
-      if (!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')) {
-        window.location.reload(true);
-      }
+    checkIfGameOver()
+  }
+}
+
+function checkIfGameOver(){
+  if (snakeHitsWall() || collidesWithSnakeBody(sneakHead.position)) {
+    gameOverSound.play();
+    field.remove(sneakHead);
+    sneakHead.position.set(0, 0, 0);
+    if (!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')) {
+      window.location.reload(true);
     }
   }
 }
 
-
 const direction = new THREE.Vector3(0,0,0); // defining constant for speed
 function moveSnake(event){
-  // console.log(event.key);
   if ( event.key == "ArrowLeft" && direction.x != 1 ){
       direction.y=0;
       direction.x=-1;
@@ -194,23 +214,9 @@ function getSnakeLength() {
 const controls = new TrackballControls(camera, renderer.domElement);
 function render() {
   requestAnimationFrame(render);
-  if( snakeHitsWall()){
-    field.remove(sneakHead);
-    sneakHead.position.set(0,0,0);
-    if(!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')){      
-      window.location.reload(true);
-    }
-  }
-
-  // if( collidesWithSnakeBody(sneakHead.position)){
-  //   // field.remove(sneakHead);
-  //   // sneakHead.position.set(0,0,0);
-  //   if(!alert('Game Over. Your snake was ' + getSnakeLength() + ' segments long.')){      
-  //     window.location.reload(true);
-  //   }
-  // }
 
   if( snakeEatsFood() ){
+    foodSound.play();
     const newBodyBlock = food.position.clone(); // clones coordinates of food
     const cube2 = bodySegment.clone();
     cube2.position.copy(newBodyBlock);
